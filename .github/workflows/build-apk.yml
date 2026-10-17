@@ -1,7 +1,10 @@
 name: Build BlackBox APK
 
-on:
-  workflow_dispatch:
+'on':
+  workflow_dispatch: {}
+  push:
+    branches:
+      - master
 
 permissions:
   contents: read
