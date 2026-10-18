@@ -27,8 +27,10 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Install Android SDK components
+            - name: Install Android SDK components
         run: |
+          yes | sdkmanager --licenses || true
+
           sdkmanager --install \
             "platforms;android-28" \
             "platforms;android-29" \
