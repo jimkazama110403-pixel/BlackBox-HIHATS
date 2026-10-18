@@ -29,11 +29,17 @@ jobs:
       - name: Install Android SDK components
         run: |
           echo "ANDROID_HOME=$ANDROID_HOME"
-          sdkmanager --version
-          yes | sdkmanager --licenses || true
-          yes | sdkmanager --licenses || true
 
-          sdkmanager --install \
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+
+          if [ ! -x "$SDKMANAGER" ]; then
+            SDKMANAGER="$ANDROID_HOME/cmdline-tools/9.0/bin/sdkmanager"
+          fi
+
+          "$SDKMANAGER" --version
+          yes | "$SDKMANAGER" --licenses || true
+
+          "$SDKMANAGER" --install \
             "platforms;android-28" \
             "platforms;android-29" \
             "platforms;android-30" \
