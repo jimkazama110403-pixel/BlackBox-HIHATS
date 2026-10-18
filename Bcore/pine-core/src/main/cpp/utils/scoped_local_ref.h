@@ -5,8 +5,8 @@
 #ifndef PINE_SCOPED_LOCAL_REF_H
 #define PINE_SCOPED_LOCAL_REF_H
 
+#include <cstddef>
 #include "macros.h"
-
 // Generic RAII wrapper for a JNI local reference.
 template<typename T>
 class ScopedLocalRef {
