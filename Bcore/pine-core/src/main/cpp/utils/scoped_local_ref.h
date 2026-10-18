@@ -10,7 +10,7 @@
 template<typename T>
 class ScopedLocalRef {
 public:
-    ScopedLocalRef(JNIEnv* env) : env(env), mLocalRef(nullptr) {
+    explicit ScopedLocalRef(JNIEnv* env) : env(env), mLocalRef(nullptr) {
     }
 
     ScopedLocalRef(JNIEnv* env, T ref) : env(env), mLocalRef(ref) {
@@ -55,11 +55,11 @@ public:
         return !IsNull();
     }
 
-    bool operator==(ScopedLocalRef const s) const {
+    bool operator==(ScopedLocalRef const &s) const {
         return env->IsSameObject(mLocalRef, s.mLocalRef);
     }
 
-    bool operator!=(ScopedLocalRef const s) const {
+    bool operator!=(ScopedLocalRef const &s) const {
         return !env->IsSameObject(mLocalRef, s.mLocalRef);
     }
 
@@ -81,18 +81,21 @@ private:
 
 class ScopedLocalClassRef : public ScopedLocalRef<jclass> {
 public:
-    ScopedLocalClassRef(JNIEnv* env) : ScopedLocalRef(env) {
+    explicit ScopedLocalClassRef(JNIEnv* env)
+            : ScopedLocalRef<jclass>(env) {
     }
 
-    ScopedLocalClassRef(JNIEnv* env, jclass ref) : ScopedLocalRef(env, ref) {
+    ScopedLocalClassRef(JNIEnv* env, jclass ref)
+            : ScopedLocalRef<jclass>(env, ref) {
     }
 
-    ScopedLocalClassRef(JNIEnv* env, const char* name) : ScopedLocalRef(env, env->FindClass(name)) {
+    ScopedLocalClassRef(JNIEnv* env, const char* name)
+            : ScopedLocalRef<jclass>(env, env->FindClass(name)) {
     }
 
     jmethodID FindMethodID(const char* name, const char* signature) {
         JNIEnv* env = Env();
-        jmethodID method = env->GetMethodID(Get(), name, signature);
+        jmethodID method = env->GetMethodID(this->Get(), name, signature);
         if (LIKELY(method != nullptr)) {
             return method;
         } else {
@@ -104,15 +107,17 @@ public:
 
 class ScopedLocalUtfStringRef : public ScopedLocalRef<jstring> {
 public:
-    ScopedLocalUtfStringRef(JNIEnv* env) : ScopedLocalRef(env) {
+    explicit ScopedLocalUtfStringRef(JNIEnv* env)
+            : ScopedLocalRef<jstring>(env) {
     }
 
-    ScopedLocalUtfStringRef(JNIEnv* env, jstring ref) : ScopedLocalRef(env, ref) {
+    ScopedLocalUtfStringRef(JNIEnv* env, jstring ref)
+            : ScopedLocalRef<jstring>(env, ref) {
     }
 
-    ScopedLocalUtfStringRef(JNIEnv* env, const char* content) : ScopedLocalRef(
-            env, env->NewStringUTF(content)) {
+    ScopedLocalUtfStringRef(JNIEnv* env, const char* content)
+            : ScopedLocalRef<jstring>(env, env->NewStringUTF(content)) {
     }
 };
 
-#endif //PINE_SCOPED_LOCAL_REF_H
+#endif // PINE_SCOPED_LOCAL_REF_H
