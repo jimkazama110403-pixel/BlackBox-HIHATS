@@ -63,4 +63,4 @@ publish {
     licences = rootProject.licences
     website = rootProject.website
 }
-*/w
+*/
