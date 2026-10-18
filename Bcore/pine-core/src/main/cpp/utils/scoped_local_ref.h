@@ -7,13 +7,18 @@
 
 #include "macros.h"
 
+// Generic RAII wrapper for a JNI local reference.
 template<typename T>
 class ScopedLocalRef {
 public:
-    explicit ScopedLocalRef(JNIEnv* env) : env(env), mLocalRef(nullptr) {
+    using value_type = T;
+
+    explicit ScopedLocalRef(JNIEnv* env)
+            : env_(env), local_(nullptr) {
     }
 
-    ScopedLocalRef(JNIEnv* env, T ref) : env(env), mLocalRef(ref) {
+    ScopedLocalRef(JNIEnv* env, T ref)
+            : env_(env), local_(ref) {
     }
 
     ~ScopedLocalRef() {
@@ -21,30 +26,30 @@ public:
     }
 
     T Get() const {
-        return mLocalRef;
+        return local_;
     }
 
     void Reset(T newRef = nullptr) {
-        if (mLocalRef != newRef) {
-            if (mLocalRef != nullptr) {
-                env->DeleteLocalRef(mLocalRef);
+        if (local_ != newRef) {
+            if (local_ != nullptr) {
+                env_->DeleteLocalRef(local_);
             }
-            mLocalRef = newRef;
+            local_ = newRef;
         }
     }
 
     T Release() __attribute__((warn_unused_result)) {
-        T ref = mLocalRef;
-        mLocalRef = nullptr;
+        T ref = local_;
+        local_ = nullptr;
         return ref;
     }
 
     bool IsNull() const {
-        return mLocalRef == nullptr;
+        return local_ == nullptr;
     }
 
-    JNIEnv* Env() {
-        return env;
+    JNIEnv* Env() const {
+        return env_;
     }
 
     bool operator==(std::nullptr_t) const {
@@ -55,68 +60,62 @@ public:
         return !IsNull();
     }
 
-    bool operator==(ScopedLocalRef const &s) const {
-        return env->IsSameObject(mLocalRef, s.mLocalRef);
-    }
-
-    bool operator!=(ScopedLocalRef const &s) const {
-        return !env->IsSameObject(mLocalRef, s.mLocalRef);
-    }
-
-    bool operator==(T const other) const {
-        return env->IsSameObject(mLocalRef, other);
-    }
-
-    bool operator!=(T const other) const {
-        return !env->IsSameObject(mLocalRef, other);
-    }
-
 private:
-    JNIEnv* env;
-    T mLocalRef;
+    JNIEnv* env_;
+    T       local_;
 
     DISALLOW_COPY_AND_ASSIGN(ScopedLocalRef);
 };
 
-
+// RAII wrapper for jclass
 class ScopedLocalClassRef : public ScopedLocalRef<jclass> {
+    using Base = ScopedLocalRef<jclass>;
 public:
+    using Base::Env;
+    using Base::Get;
+    using Base::IsNull;
+
     explicit ScopedLocalClassRef(JNIEnv* env)
-            : ScopedLocalRef<jclass>(env) {
+            : Base(env) {
     }
 
     ScopedLocalClassRef(JNIEnv* env, jclass ref)
-            : ScopedLocalRef<jclass>(env, ref) {
+            : Base(env, ref) {
     }
 
     ScopedLocalClassRef(JNIEnv* env, const char* name)
-            : ScopedLocalRef<jclass>(env, env->FindClass(name)) {
+            : Base(env, env->FindClass(name)) {
     }
 
     jmethodID FindMethodID(const char* name, const char* signature) {
         JNIEnv* env = Env();
-        jmethodID method = env->GetMethodID(this->Get(), name, signature);
+        jmethodID method = env->GetMethodID(Get(), name, signature);
         if (LIKELY(method != nullptr)) {
             return method;
-        } else {
-            env->ExceptionClear();
-            return nullptr;
         }
+        env->ExceptionClear();
+        return nullptr;
     }
 };
 
+// RAII wrapper for jstring
 class ScopedLocalUtfStringRef : public ScopedLocalRef<jstring> {
+    using Base = ScopedLocalRef<jstring>;
 public:
+    using Base::Env;
+    using Base::Get;
+    using Base::IsNull;
+
     explicit ScopedLocalUtfStringRef(JNIEnv* env)
-            : ScopedLocalRef<jstring>(env) {
+            : Base(env) {
     }
 
     ScopedLocalUtfStringRef(JNIEnv* env, jstring ref)
-            : ScopedLocalRef<jstring>(env, ref) {
+            : Base(env, ref) {
     }
 
     ScopedLocalUtfStringRef(JNIEnv* env, const char* content)
-            : ScopedLocalRef<jstring>(env, env->NewStringUTF(content)) {
+            : Base(env, env->NewStringUTF(content)) {
     }
 };
 
